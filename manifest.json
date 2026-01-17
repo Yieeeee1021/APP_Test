@@ -1,11 +1,16 @@
 {
   "name": "Milky Wallet",
   "short_name": "MilkyWallet",
-  "start_url": "./index.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#FDF5E6",
-  "theme_color": "#FFD1DC",
+  "theme_color": "#FDF5E6",
   "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
       "sizes": "512x512",
