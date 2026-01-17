@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>理財小幫手</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Milky Wallet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        
+        :root {
+            --bg-cream: #FDF5E6; --card-white: #FFFDF9; --main-pink: #FFD1DC;     
+            --deep-pink: #FFB6C1; --coffee: #8B7355; --input-bg: #FAF0E6;      
+            --alert-red: #FF8484;
+        }
+
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-cream); color: var(--coffee); margin: 0; display: flex; justify-content: center; overflow-x: hidden; }
+        .app-container { width: 100%; max-width: 414px; min-height: 100vh; background-color: var(--bg-cream); display: flex; flex-direction: column; padding-bottom: 40px; }
+        .card { background-color: var(--card-white); border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.15); margin: 12px; padding: 22px; border: 1px solid rgba(255, 255, 255, 0.6); }
+
+        /* --- 視覺圓圈 --- */
+        .liquid-container {
+            width: 190px; height: 190px; border-radius: 50%; background: #fff;
+            margin: 10px auto; position: relative; 
+            border: 8px solid #FFFFFF; 
+            box-shadow: 0 12px 25px rgba(255, 182, 193, 0.4); 
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        /* 負數時的紅色外框 */
+        .is-overdrawn {
+            border-color: var(--alert-red) !important;
+            box-shadow: 0 0 20px rgba(255, 132, 132, 0.5);
+        }
+
+        .wave-wrapper {
+            position: absolute; width: 100%; bottom: 0; left: 0;
+            transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+
+        .wave-svg-box { position: absolute; width: 200%; height: 45px; left: 0; }
+        
+        /* 深粉：今日剩餘 */
+        .wave-front { top: -43px; z-index: 15; animation: wave-slide 4s infinite linear; fill: var(--deep-pink); }
+        .wave-front-bg { position: absolute; top: 0; width: 100%; height: 100%; background: var(--deep-pink); z-index: 14; }
+
+        /* 淺粉：本月剩餘 */
+        .wave-back { top: -43px; z-index: 5; animation: wave-slide 7s infinite linear reverse; fill: var(--main-pink); opacity: 0.6; }
+        .wave-back-bg { position: absolute; top: 0; width: 100%; height: 100%; background: var(--main-pink); z-index: 4; opacity: 0.6; }
+
+        @keyframes wave-slide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        .budget-text { position: absolute; width: 100%; text-align: center; top: 50%; transform: translateY(-50%); z-index: 20; pointer-events: none; }
+        input { background-color: var(--input-bg); border: none; border-radius: 12px; padding: 5px; text-align: right; outline: none; width: 100%; color: var(--coffee); font-weight: bold; }
+        .btn-pink { background: linear-gradient(135deg, var(--main-pink), var(--deep-pink)); color: white; padding: 10px 20px; border-radius: 15px; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.4); }
+        .btn-light-pink { background-color: #FFF0F5; color: var(--deep-pink); padding: 8px; border-radius: 12px; font-weight: bold; font-size: 11px; margin-top: 20px;}
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #FEE; }
+        .delete-btn { color: #FFC0CB; font-size: 24px; cursor: pointer; padding: 0 5px 0 15px; }
+        .negative { color: #FF8484; } .positive { color: #8ED9A1; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="pt-8 px-8 flex justify-between items-end">
+        <div>
+            <h2 id="current-month" class="text-3xl font-bold text-[#D2B48C]">--月</h2>
+            <p id="days-left-text" class="text-[10px] tracking-[2px] font-bold opacity-40 uppercase">Loading...</p>
+        </div>
+        <div class="text-right">
+            <p class="text-[10px] font-bold text-pink-300 mb-1">💖 累積存款</p>
+            <div class="bg-white px-4 py-1 rounded-full border border-pink-100 shadow-sm">
+                <span id="total-savings-display" class="font-bold text-pink-400 text-xl">$ 0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center my-6">
+        <div id="visual-circle" class="liquid-container">
+            <div id="wave-box-today" class="wave-wrapper" style="z-index: 15; height: 0%;">
+                <svg class="wave-svg-box wave-front" viewBox="0 0 100 20" preserveAspectRatio="none">
+                    <path d="M0,10 C25,0 35,20 50,10 C65,0 75,20 100,10 L100,20 L0,20 Z"></path>
+                </svg>
+                <div class="wave-front-bg"></div>
+            </div>
+
+            <div id="wave-box-month" class="wave-wrapper" style="z-index: 5; height: 0%;">
+                <svg class="wave-svg-box wave-back" viewBox="0 0 100 20" preserveAspectRatio="none">
+                    <path d="M0,10 C20,20 30,0 50,10 C70,20 80,0 100,10 L100,20 L0,20 Z"></path>
+                </svg>
+                <div class="wave-back-bg"></div>
+            </div>
+            
+            <div class="budget-text">
+                <p class="text-[10px] font-bold opacity-40 uppercase">今日剩餘</p>
+                <p id="daily-remaining" class="text-4xl font-extrabold text-[#8B7355]">$ 0</p>
+            </div>
+        </div>
+        <div class="flex justify-center gap-6 text-[11px] font-bold opacity-30 mt-3">
+            <span>今日收支 <span id="today-net-text">$0</span></span>
+            <span>本月剩餘 <span id="total-free-text">$0</span></span>
+        </div>
+    </div>
+
+    <div class="card border-none" style="background: linear-gradient(to bottom right, #FFFDF9, #FFF5F7);">
+        <h3 class="text-sm font-bold mb-3 opacity-60">✍️ 記下一筆 (+/-)</h3>
+        <div class="flex gap-3">
+            <input type="text" id="expense-input" placeholder="例如: -150" class="flex-1 text-left px-5 shadow-inner">
+            <button onclick="handleTransaction()" class="btn-pink">記錄</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 class="text-xs font-bold mb-2 opacity-30 tracking-widest uppercase">🔍 今日明細</h3>
+        <div id="history-list" class="max-h-48 overflow-y-auto"></div>
+    </div>
+
+    <div class="card mb-10">
+        <h3 class="text-xs font-bold mb-4 opacity-30 tracking-widest uppercase">⚙️ 每月設定</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div><label class="text-[10px] block opacity-50 mb-1 ml-1">💰 每月收入</label><input type="number" id="income" value="40000" oninput="calculate()"></div>
+            <div><label class="text-[10px] block opacity-50 mb-1 ml-1 text-red-300">🏠 固定支出</label><input type="number" id="fixed" value="7500" oninput="calculate()"></div>
+            <div><label class="text-[10px] block opacity-50 mb-1 ml-1 text-blue-300">💳 信用卡已刷</label><input type="number" id="credit" value="0" oninput="calculate()"></div>
+            <div><label class="text-[10px] block opacity-50 mb-1 ml-1 text-pink-400">🐷 每月儲蓄</label><input type="number" id="saving" value="10000" oninput="calculate()"></div>
+            <div class="col-span-1"><label class="text-[10px] block opacity-50 mb-1 ml-1 text-orange-300">📈 投資理財</label><input type="number" id="investment" value="10000" oninput="calculate()"></div>
+            <div class="col-span-1 flex flex-col gap-2 justify-end">
+                <button onclick="modifySavings()" class="btn-light-pink">存款提領/存入</button>
+                <button onclick="forceReset()" class="text-[9px] text-gray-300 underline text-right">徹底重置</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fields = ['income', 'fixed', 'credit', 'saving', 'investment'];
+    
+    window.onload = function() {
+        fields.forEach(f => {
+            const saved = localStorage.getItem(f);
+            if (saved !== null) document.getElementById(f).value = saved;
+        });
+        const todayStr = new Date().toDateString();
+        if (localStorage.getItem('lastOpenDate') !== todayStr) {
+            localStorage.setItem('todayHistory', '[]'); 
+            localStorage.setItem('lastOpenDate', todayStr);
+        }
+        calculate();
+    };
+
+    function handleTransaction() {
+        const inputStr = document.getElementById('expense-input').value.trim();
+        let amount = parseFloat(inputStr);
+        if (isNaN(amount)) return;
+        if (!inputStr.startsWith('+') && !inputStr.startsWith('-')) amount = -Math.abs(amount);
+        const history = JSON.parse(localStorage.getItem('todayHistory') || '[]');
+        history.push({ id: Date.now(), time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), amount: amount });
+        localStorage.setItem('todayHistory', JSON.stringify(history));
+        let totalExtra = parseFloat(localStorage.getItem('totalExtraSpent')) || 0;
+        localStorage.setItem('totalExtraSpent', totalExtra + amount);
+        document.getElementById('expense-input').value = '';
+        calculate();
+    }
+
+    window.deleteItem = function(id) {
+        let history = JSON.parse(localStorage.getItem('todayHistory') || '[]');
+        const itemIndex = history.findIndex(item => item.id === id);
+        if (itemIndex !== -1) {
+            const itemToDelete = history[itemIndex];
+            let totalExtra = parseFloat(localStorage.getItem('totalExtraSpent')) || 0;
+            localStorage.setItem('totalExtraSpent', totalExtra - itemToDelete.amount);
+            history.splice(itemIndex, 1);
+            localStorage.setItem('todayHistory', JSON.stringify(history));
+            calculate();
+        }
+    };
+
+    function modifySavings() {
+        const val = prompt("存款提領(-)或額外存入(+)：");
+        const amount = parseFloat(val);
+        if (!isNaN(amount)) {
+            let currentExtra = parseFloat(localStorage.getItem('extraSavings')) || 0;
+            localStorage.setItem('extraSavings', currentExtra + amount);
+            calculate();
+        }
+    }
+
+    window.forceReset = function() {
+        if (confirm("⚠️ 注意：這將刪除所有設定與紀錄！確定嗎？")) {
+            localStorage.clear();
+            location.reload();
+        }
+    };
+
+    function calculate() {
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysLeft = (daysInMonth - now.getDate()) + 1;
+        document.getElementById('current-month').innerText = (now.getMonth() + 1) + "月";
+        document.getElementById('days-left-text').innerText = `剩餘 ${daysLeft} 天`;
+
+        const getV = (id) => parseFloat(document.getElementById(id).value) || 0;
+        fields.forEach(f => localStorage.setItem(f, document.getElementById(f).value));
+
+        const history = JSON.parse(localStorage.getItem('todayHistory') || '[]');
+        const todayNet = history.reduce((acc, curr) => acc + curr.amount, 0);
+        const totalExtra = parseFloat(localStorage.getItem('totalExtraSpent')) || 0;
+        const extraSavings = parseFloat(localStorage.getItem('extraSavings')) || 0;
+
+        document.getElementById('total-savings-display').innerText = '$' + (getV('saving') + extraSavings).toLocaleString();
+        
+        const potentialIncome = getV('income') - getV('fixed') - getV('saving') - getV('investment');
+        const totalFree = potentialIncome - getV('credit') + totalExtra;
+        const dailyRem = ((totalFree - todayNet) / daysLeft) + todayNet;
+        const standardDaily = potentialIncome / daysInMonth;
+
+        document.getElementById('total-free-text').innerText = '$' + Math.floor(totalFree).toLocaleString();
+        document.getElementById('today-net-text').innerText = (todayNet >= 0 ? '+' : '') + todayNet.toLocaleString();
+        
+        const dailyDisplay = document.getElementById('daily-remaining');
+        dailyDisplay.innerText = '$' + Math.floor(dailyRem).toLocaleString();
+
+        const circle = document.getElementById('visual-circle');
+        const waveToday = document.getElementById('wave-box-today');
+        const waveMonth = document.getElementById('wave-box-month');
+
+        // --- 視覺修正中心 ---
+        
+        // 1. 今日波浪 (深色)
+        if (dailyRem <= 0) {
+            waveToday.style.height = "0%";
+            waveToday.style.opacity = "0"; // 徹底隱藏，不留殘影
+            circle.classList.add('is-overdrawn'); // 紅色外框
+            dailyDisplay.classList.add('negative');
+        } else {
+            let hToday = (standardDaily > 0) ? (dailyRem / standardDaily) * 100 : 0;
+            waveToday.style.height = Math.min(100, hToday) + "%";
+            waveToday.style.opacity = "1";
+            circle.classList.remove('is-overdrawn');
+            dailyDisplay.classList.remove('negative');
+        }
+
+        // 2. 本月波浪 (淺色)
+        if (totalFree <= 0) {
+            waveMonth.style.height = "0%";
+            waveMonth.style.opacity = "0"; // 徹底隱藏
+        } else {
+            let hMonth = (potentialIncome > 0) ? (totalFree / potentialIncome) * 100 : 0;
+            waveMonth.style.height = Math.min(100, hMonth) + "%";
+            waveMonth.style.opacity = "1";
+        }
+
+        const listContainer = document.getElementById('history-list');
+        if (history.length === 0) {
+            listContainer.innerHTML = '<p class="text-center text-xs opacity-20 py-6">NO RECORDS</p>';
+        } else {
+            listContainer.innerHTML = [...history].reverse().map(item => `
+                <div class="history-item">
+                    <div class="flex items-center"><span class="opacity-30 text-[9px] w-12 font-bold">${item.time}</span><span class="font-bold ${item.amount < 0 ? 'negative' : 'positive'}">${item.amount > 0 ? '+' : ''}${item.amount}</span></div>
+                    <div class="delete-btn" onclick="deleteItem(${item.id})">×</div>
+                </div>
+            `).join('');
+        }
+    }
+</script>
+</body>
+</html>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>
