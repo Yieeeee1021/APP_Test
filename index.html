@@ -22,12 +22,12 @@
         }
 
         body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-cream); color: var(--coffee); margin: 0; display: flex; justify-content: center; overflow-x: hidden; text-align: center; }
-        .app-container {width: 100vw; /* 改用 vw 確保寬度鎖定 */ max-width: 414px; min-height: 100vh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); overflow-x: hidden; /* 強制隱藏橫向捲軸 */}
-        .card { background-color: var(--card-white); border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.15); margin: 12px; padding: 22px; border: 1px solid rgba(255, 255, 255, 0.6); }
+        .app-container {padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: calc(env(safe-area-inset-bottom) + 20px);}
+        .card {width: auto; margin: 12px 0; /* 左右不留 margin，靠 container 的 padding 來控制 */}
 
         /* --- 視覺圓圈 --- */
         .liquid-container {
-            width: 190px; height: 190px; border-radius: 50%; background: #fff;
+            width: 45vw;; height: 45vw;max-width: 190px; max-height: 190px; min-width: 150px; min-height: 150px; border-radius: 50%; background: #fff;
             margin: 10px auto; position: relative; 
             border: 8px solid #FFFFFF; 
             box-shadow: 0 12px 25px rgba(255, 182, 193, 0.4); 
@@ -63,7 +63,7 @@
         @keyframes wave-slide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
         .budget-text { position: absolute; width: 100%; text-align: center; top: 50%; transform: translateY(-50%); z-index: 20; pointer-events: none; }
-        input { background-color: var(--input-bg); border: none; border-radius: 12px; padding: 5px; text-align: right; outline: none; width: 100%; color: var(--coffee); font-weight: bold; }
+        input {font-size: clamp(14px, 4vw, 20px); padding: 12px 5%; width: 100%; box-sizing: border-box;}
         .btn-pink { background: linear-gradient(135deg, var(--main-pink), var(--deep-pink)); color: white; padding: 10px 20px; border-radius: 15px; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.4); }
         .btn-light-pink { background-color: #FFF0F5; color: var(--deep-pink); padding: 8px; border-radius: 12px; font-weight: bold; font-size: 11px; margin-top: 20px;}
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #FEE; }
@@ -129,7 +129,7 @@
 
     <div class="card mb-10">
         <h3 class="text-xs font-bold mb-4 opacity-30 tracking-widest uppercase">⚙️ 每月設定</h3>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 min-[350px]:grid-cols-2 gap-4">
             <div><label class="text-[10px] block opacity-50 mb-1 ml-1">💰 每月收入</label><input type="number" id="income" value="40000" oninput="calculate()"></div>
             <div><label class="text-[10px] block opacity-50 mb-1 ml-1 text-red-300">🏠 固定支出</label><input type="number" id="fixed" value="7500" oninput="calculate()"></div>
             <div><label class="text-[10px] block opacity-50 mb-1 ml-1 text-blue-300">💳 信用卡已刷</label><input type="number" id="credit" value="0" oninput="calculate()"></div>
