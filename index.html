@@ -2,7 +2,6 @@
 <html lang="zh-TW">
 <head>
     <link rel="manifest" href="./manifest.json">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#FDF5E6">
 
@@ -22,8 +21,8 @@
             --alert-red: #FF8484;
         }
 
-        body {background-color: var(--bg-cream); margin: 0; display: flex; justify-content: center; /* 讓縮放後的 App 始終水平居中 */ overflow-x: hidden;      /* 防止出現橫向捲軸 */}
-        .app-container {width: 414px; min-height: 100vh; background-color: var(--bg-cream); transition: transform 0.2s ease; /* 縮放時平滑一點 */}
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-cream); color: var(--coffee); margin: 0; display: flex; justify-content: center; overflow-x: hidden; text-align: center; }
+        .app-container {width: 100vw; /* 改用 vw 確保寬度鎖定 */ max-width: 414px; min-height: 100vh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); overflow-x: hidden; /* 強制隱藏橫向捲軸 */}
         .card { background-color: var(--card-white); border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.15); margin: 12px; padding: 22px; border: 1px solid rgba(255, 255, 255, 0.6); }
 
         /* --- 視覺圓圈 --- */
@@ -145,28 +144,6 @@
 </div>
 
 <script>
-    function adjustScale() {
-        const baseWidth = 414; // 你的基準寬度
-        const screenWidth = window.innerWidth;
-        const scale = screenWidth / baseWidth;
-        const container = document.querySelector('.app-container');
-
-        if (container) {
-            // 使用 transform 進行等比例縮放
-            container.style.transform = `scale(${scale})`;
-            container.style.transformOrigin = 'top center';
-            container.style.width = `${baseWidth}px`;
-        
-            // 修正縮放後高度不足的問題：讓 body 背景色填滿
-            document.body.style.height = '100%';
-            document.body.style.backgroundColor = '#FDF5E6'; 
-        }
-    }
-
-    // 監聽縮放與載入事件
-    window.addEventListener('resize', adjustScale);
-    window.addEventListener('DOMContentLoaded', adjustScale); // 改用 DOMContentLoaded 會比 load 更快執行
-    
     const fields = ['income', 'fixed', 'credit', 'saving', 'investment'];
     
     window.onload = function() {
