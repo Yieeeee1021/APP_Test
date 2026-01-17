@@ -1,7 +1,7 @@
 {
   "name": "Milky Wallet",
   "short_name": "MilkyWallet",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FDF5E6",
   "theme_color": "#FFD1DC",
