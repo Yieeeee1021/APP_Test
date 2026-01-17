@@ -145,6 +145,28 @@
 </div>
 
 <script>
+    function adjustScale() {
+        const baseWidth = 414; // 你的基準寬度
+        const screenWidth = window.innerWidth;
+        const scale = screenWidth / baseWidth;
+        const container = document.querySelector('.app-container');
+
+        if (container) {
+            // 使用 transform 進行等比例縮放
+            container.style.transform = `scale(${scale})`;
+            container.style.transformOrigin = 'top center';
+            container.style.width = `${baseWidth}px`;
+        
+            // 修正縮放後高度不足的問題：讓 body 背景色填滿
+            document.body.style.height = '100%';
+            document.body.style.backgroundColor = '#FDF5E6'; 
+        }
+    }
+
+    // 監聽縮放與載入事件
+    window.addEventListener('resize', adjustScale);
+    window.addEventListener('DOMContentLoaded', adjustScale); // 改用 DOMContentLoaded 會比 load 更快執行
+    
     const fields = ['income', 'fixed', 'credit', 'saving', 'investment'];
     
     window.onload = function() {
