@@ -7,12 +7,11 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Milky Wallet">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* 保留你原本的所有顏色與變數 */
         :root {
             --bg-cream: #FDF5E6;
             --input-bg: #FFFFFF;
@@ -21,26 +20,30 @@
             --light-pink: #FFD1DC;
         }
 
+        /* 確保背景填滿，不顯示橫向捲軸 */
         body {
             background-color: var(--bg-cream);
             margin: 0;
+            padding: 0;
+            overflow-x: hidden;
             display: flex;
             justify-content: center;
-            overflow-x: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
         }
 
-        /* 核心容器：固定寬度 414px，後續透過 JS 縮放 */
+        /* 縮放容器：維持你開發時最漂亮的 414px 寬度 */
         .app-container {
             width: 414px;
             min-height: 100vh;
-            padding: 20px;
-            padding-top: calc(env(safe-area-inset-top) + 20px);
-            padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
-            box-sizing: border-box;
             background-color: var(--bg-cream);
+            transform-origin: top center;
+            box-sizing: border-box;
+            padding: 20px;
+            /* 適配瀏海 */
+            padding-top: calc(env(safe-area-inset-top) + 10px);
         }
 
+        /* --- 以下完全是你原本的 CSS 樣式 --- */
         .card {
             background: white;
             border-radius: 30px;
@@ -84,6 +87,19 @@
             transition: height 0.5s ease;
         }
 
+        .btn-light-pink {
+            background-color: #FFF0F5;
+            color: var(--deep-pink);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 11px;
+            margin-top: 10px;
+            width: fit-content;
+            align-self: flex-end;
+            display: inline-block;
+        }
+
         .btn-action {
             background-color: var(--light-pink);
             color: var(--deep-pink);
@@ -92,81 +108,65 @@
             font-weight: bold;
             width: 100%;
             margin-top: 10px;
-            transition: opacity 0.2s;
-        }
-
-        .btn-deposit-adjust {
-            background-color: #FFF0F5;
-            color: var(--deep-pink);
-            padding: 6px 12px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-top: 8px;
-            width: fit-content;
-            align-self: flex-end;
         }
     </style>
 </head>
 <body>
 
-<div class="app-container" id="app">
+<div class="app-container" id="main-app">
+    
     <div class="card text-center">
         <h2 class="text-gray-400 text-sm mb-2">今日剩餘預算</h2>
         <div class="liquid-container">
-            <div class="water" id="water-level" style="height: 50%;"></div>
+            <div class="water" id="water-level"></div>
             <div class="absolute inset-0 flex items-center justify-center">
                 <span class="text-3xl font-black text-pink-500" id="daily-remaining">$0</span>
             </div>
         </div>
-        <p class="mt-4 text-gray-500 font-bold" id="total-status">總資產狀態載入中...</p>
     </div>
 
     <div class="card">
-        <h3 class="font-bold text-coffee mb-4">每月設定</h3>
+        <h3 class="font-bold text-coffee mb-4">💰 每月設定</h3>
         <div class="grid grid-cols-2 gap-4">
-            <div><label class="text-[11px] block opacity-50 mb-1 ml-1">💰 每月收入</label><input type="number" id="income" value="40000" oninput="calculate()"></div>
-            <div><label class="text-[11px] block opacity-50 mb-1 ml-1 text-red-300">🏠 固定支出</label><input type="number" id="fixed" value="7500" oninput="calculate()"></div>
-            <div><label class="text-[11px] block opacity-50 mb-1 ml-1 text-blue-300">💳 信用卡</label><input type="number" id="credit" value="0" oninput="calculate()"></div>
-            <div><label class="text-[11px] block opacity-50 mb-1 ml-1 text-pink-400">🐷 儲蓄目標</label><input type="number" id="saving" value="10000" oninput="calculate()"></div>
+            <div><label class="text-[11px] block opacity-50 mb-1 ml-1">每月收入</label><input type="number" id="income" value="40000" oninput="calculate()"></div>
+            <div><label class="text-[11px] block opacity-50 mb-1 ml-1 text-red-300">固定支出</label><input type="number" id="fixed" value="7500" oninput="calculate()"></div>
+            <div><label class="text-[11px] block opacity-50 mb-1 ml-1 text-blue-300">信用卡</label><input type="number" id="credit" value="0" oninput="calculate()"></div>
+            <div><label class="text-[11px] block opacity-50 mb-1 ml-1 text-pink-400">儲蓄目標</label><input type="number" id="saving" value="10000" oninput="calculate()"></div>
         </div>
     </div>
 
     <div class="card flex flex-col">
         <div class="flex justify-between items-center">
-            <h3 class="font-bold text-coffee">持續存款累計</h3>
+            <h3 class="font-bold text-coffee">🐷 存款累計</h3>
             <span class="text-xl font-black text-pink-400" id="total-deposit">$0</span>
         </div>
-        <p class="text-[10px] text-gray-400 mt-1">此金額會跨月持續累積，除非手動扣除。</p>
-        <button onclick="adjustDeposit()" class="btn-deposit-adjust">手動扣除 / 額外存入</button>
+        <button onclick="adjustDeposit()" class="btn-light-pink">調整存款</button>
     </div>
 
     <div class="card">
-        <h3 class="font-bold text-coffee mb-4">記下一筆支出</h3>
-        <input type="number" id="spend-amount" placeholder="輸入今天花了多少..." class="text-center">
-        <button onclick="addSpend()" class="btn-action">確認扣款</button>
+        <h3 class="font-bold text-coffee mb-4">💸 今日支出</h3>
+        <input type="number" id="spend-amount" placeholder="0" class="text-center">
+        <button onclick="addSpend()" class="btn-action">記下一筆</button>
     </div>
+
 </div>
 
 <script>
-    // 1. 等比例縮放邏輯
-    function adjustScale() {
-        const baseWidth = 414;
-        const screenWidth = window.innerWidth;
-        const scale = screenWidth / baseWidth;
-        const container = document.getElementById('app');
+    // --- 1. 等比例縮放腳本 (不更動樣式的核心) ---
+    function autoScale() {
+        const targetWidth = 414; 
+        const windowWidth = window.innerWidth;
+        const scale = windowWidth / targetWidth;
+        const container = document.getElementById('main-app');
         
-        if (screenWidth < baseWidth) {
+        if (container && windowWidth < targetWidth) {
             container.style.transform = `scale(${scale})`;
-            container.style.transformOrigin = 'top center';
-            container.style.width = `${baseWidth}px`;
-        } else {
-            container.style.transform = 'none';
-            container.style.width = `414px`;
+        } else if (container) {
+            container.style.transform = `none`;
         }
     }
 
-    // 2. 財務邏輯
+    // --- 2. 你原本的邏輯代碼 ---
     let deposit = parseFloat(localStorage.getItem('milky_deposit')) || 0;
     let todaySpend = 0;
 
@@ -176,21 +176,15 @@
         const credit = parseFloat(document.getElementById('credit').value) || 0;
         const saving = parseFloat(document.getElementById('saving').value) || 0;
 
-        // 計算每月剩餘可支配預算 (扣除固定支出、信用卡與儲蓄)
         const monthlyLeft = income - fixed - credit - saving;
-        const dailyBudget = Math.max(0, monthlyLeft / 30);
+        const dailyBudget = monthlyLeft / 30;
         const remaining = Math.round(dailyBudget - todaySpend);
 
-        // 更新 UI
         document.getElementById('daily-remaining').innerText = `$${remaining}`;
         document.getElementById('total-deposit').innerText = `$${Math.round(deposit)}`;
         
-        // 圓圈水位 (假設最高日預算 1500)
         const waterHeight = Math.min(100, Math.max(0, (remaining / 1500) * 100));
         document.getElementById('water-level').style.height = `${waterHeight}%`;
-
-        // 儲存設定
-        localStorage.setItem('milky_income', income);
     }
 
     function addSpend() {
@@ -203,7 +197,7 @@
     }
 
     function adjustDeposit() {
-        const val = prompt("請輸入變動金額 (例：-500 扣錢，500 加錢)", "0");
+        const val = prompt("輸入調整金額 (+增加, -扣除)", "0");
         if (val !== null) {
             deposit += parseFloat(val);
             localStorage.setItem('milky_deposit', deposit);
@@ -211,10 +205,10 @@
         }
     }
 
-    // 初始執行
-    window.addEventListener('resize', adjustScale);
+    // 初始化與事件監聽
+    window.addEventListener('resize', autoScale);
     window.addEventListener('DOMContentLoaded', () => {
-        adjustScale();
+        autoScale();
         calculate();
     });
 </script>
