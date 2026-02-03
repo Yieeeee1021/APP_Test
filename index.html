@@ -23,7 +23,6 @@
             --alert-red: #FF8484;
         }
 
-        /* 修正 body：確保縮放時內容置中且背景填滿 */
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
             background-color: var(--bg-cream); 
@@ -36,14 +35,13 @@
             min-height: 100vh;
         }
 
-        /* 關鍵容器：固定寬度並設定縮放基準點 */
         .app-container {
             width: 414px; 
             min-height: 100vh; 
             padding-top: env(safe-area-inset-top); 
             padding-bottom: env(safe-area-inset-bottom); 
             overflow-x: hidden;
-            transform-origin: top center; /* 縮放時由頂部中心開始 */
+            transform-origin: top center;
             box-sizing: border-box;
             background-color: var(--bg-cream);
         }
@@ -60,16 +58,8 @@
             transition: all 0.3s ease;
         }
         
-        .is-overdrawn {
-            border-color: var(--alert-red) !important;
-            box-shadow: 0 0 20px rgba(255, 132, 132, 0.5);
-        }
-
-        .wave-wrapper {
-            position: absolute; width: 100%; bottom: 0; left: 0;
-            transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-        }
-
+        .is-overdrawn { border-color: var(--alert-red) !important; box-shadow: 0 0 20px rgba(255, 132, 132, 0.5); }
+        .wave-wrapper { position: absolute; width: 100%; bottom: 0; left: 0; transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
         .wave-svg-box { position: absolute; width: 200%; height: 45px; left: 0; }
         .wave-front { top: -43px; z-index: 15; animation: wave-slide 4s infinite linear; fill: var(--deep-pink); }
         .wave-front-bg { position: absolute; top: 0; width: 100%; height: 100%; background: var(--deep-pink); z-index: 14; }
@@ -79,7 +69,21 @@
         @keyframes wave-slide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
         .budget-text { position: absolute; width: 100%; text-align: center; top: 50%; transform: translateY(-50%); z-index: 20; pointer-events: none; }
-        input { background-color: var(--input-bg); border: none; border-radius: 12px; padding: 8px; text-align: right; outline: none; width: 100%; color: var(--coffee); font-weight: bold; }
+        
+        /* 1. 修正輸入框體驗：文字靠右，且點擊時游標在最右邊 */
+        input { 
+            background-color: var(--input-bg); 
+            border: none; 
+            border-radius: 12px; 
+            padding: 8px; 
+            text-align: right; 
+            outline: none; 
+            width: 100%; 
+            color: var(--coffee); 
+            font-weight: bold;
+            direction: ltr; /* 確保輸入方向，配合 text-align: right */
+        }
+
         .btn-pink { background: linear-gradient(135deg, var(--main-pink), var(--deep-pink)); color: white; padding: 10px 20px; border-radius: 15px; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.4); }
         .btn-light-pink { background-color: #FFF0F5; color: var(--deep-pink); padding: 8px; border-radius: 12px; font-weight: bold; font-size: 11px; margin-top: 10px;}
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #FEE; }
@@ -111,14 +115,12 @@
                 </svg>
                 <div class="wave-front-bg"></div>
             </div>
-
             <div id="wave-box-month" class="wave-wrapper" style="z-index: 5; height: 0%;">
                 <svg class="wave-svg-box wave-back" viewBox="0 0 100 20" preserveAspectRatio="none">
                     <path d="M0,10 C20,20 30,0 50,10 C70,20 80,0 100,10 L100,20 L0,20 Z"></path>
                 </svg>
                 <div class="wave-back-bg"></div>
             </div>
-            
             <div class="budget-text">
                 <p class="text-[10px] font-bold opacity-40 uppercase">今日剩餘</p>
                 <p id="daily-remaining" class="text-4xl font-extrabold text-[#8B7355]">$ 0</p>
@@ -160,31 +162,27 @@
 </div>
 
 <script>
-    // --- 1. 等比例縮放邏輯 (自動適配螢幕) ---
     function adjustScale() {
         const targetWidth = 414; 
         const windowWidth = window.innerWidth;
         const scale = windowWidth / targetWidth;
         const container = document.getElementById('main-app');
-        
         if (container) {
-            if (windowWidth < targetWidth) {
-                container.style.transform = `scale(${scale})`;
-            } else {
-                container.style.transform = `none`;
-            }
+            container.style.transform = (windowWidth < targetWidth) ? `scale(${scale})` : `none`;
         }
     }
 
-    // --- 2. 原有的財務與 UI 邏輯 ---
     const fields = ['income', 'fixed', 'credit', 'saving', 'investment'];
     
     window.onload = function() {
         adjustScale();
+        checkMonthTransition(); // 2. 檢查是否跨月
+        
         fields.forEach(f => {
             const saved = localStorage.getItem(f);
             if (saved !== null) document.getElementById(f).value = saved;
         });
+        
         const todayStr = new Date().toDateString();
         if (localStorage.getItem('lastOpenDate') !== todayStr) {
             localStorage.setItem('todayHistory', '[]'); 
@@ -194,6 +192,32 @@
     };
 
     window.onresize = adjustScale;
+
+    // --- 核心邏輯：跨月自動結算 ---
+    function checkMonthTransition() {
+        const now = new Date();
+        const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`; // 例如 "2026-1"
+        const lastMonthKey = localStorage.getItem('lastSavedMonth');
+
+        if (lastMonthKey && lastMonthKey !== currentMonthKey) {
+            // 偵測到換月！執行結算
+            const totalFree = parseFloat(localStorage.getItem('lastTotalFree')) || 0;
+            
+            // 如果上個月有剩餘（正數），自動存入「額外存款」
+            if (totalFree > 0) {
+                let currentExtra = parseFloat(localStorage.getItem('extraSavings')) || 0;
+                localStorage.setItem('extraSavings', currentExtra + totalFree);
+                alert(`🎉 進入新月份！已將上月餘額 $${Math.floor(totalFree)} 自動存入累積存款。`);
+            }
+
+            // 重置每月變動資料
+            localStorage.setItem('totalExtraSpent', '0');
+            localStorage.setItem('todayHistory', '[]');
+            localStorage.setItem('credit', '0'); // 換月通常信用卡帳單也重置
+            document.getElementById('credit').value = 0;
+        }
+        localStorage.setItem('lastSavedMonth', currentMonthKey);
+    }
 
     function handleTransaction() {
         const inputStr = document.getElementById('expense-input').value.trim();
@@ -254,43 +278,43 @@
         const totalExtra = parseFloat(localStorage.getItem('totalExtraSpent')) || 0;
         const extraSavings = parseFloat(localStorage.getItem('extraSavings')) || 0;
 
-        document.getElementById('total-savings-display').innerText = '$' + (getV('saving') + extraSavings).toLocaleString();
+        // 計算並儲存累積存款
+        const currentSavingGoal = getV('saving');
+        document.getElementById('total-savings-display').innerText = '$' + (currentSavingGoal + extraSavings).toLocaleString();
         
         const potentialIncome = getV('income') - getV('fixed') - getV('saving') - getV('investment');
         const totalFree = potentialIncome - getV('credit') + totalExtra;
+        
+        // 儲存目前剩餘，供下個月結算用
+        localStorage.setItem('lastTotalFree', totalFree);
+
         const dailyRem = ((totalFree - todayNet) / daysLeft) + todayNet;
         const standardDaily = potentialIncome / daysInMonth;
 
         document.getElementById('total-free-text').innerText = '$' + Math.floor(totalFree).toLocaleString();
         document.getElementById('today-net-text').innerText = (todayNet >= 0 ? '+' : '') + todayNet.toLocaleString();
-        
-        const dailyDisplay = document.getElementById('daily-remaining');
-        dailyDisplay.innerText = '$' + Math.floor(dailyRem).toLocaleString();
+        document.getElementById('daily-remaining').innerText = '$' + Math.floor(dailyRem).toLocaleString();
 
         const circle = document.getElementById('visual-circle');
         const waveToday = document.getElementById('wave-box-today');
         const waveMonth = document.getElementById('wave-box-month');
 
         if (dailyRem <= 0) {
-            waveToday.style.height = "0%";
-            waveToday.style.opacity = "0";
+            waveToday.style.height = "0%"; waveToday.style.opacity = "0";
             circle.classList.add('is-overdrawn');
-            dailyDisplay.classList.add('negative');
+            document.getElementById('daily-remaining').classList.add('negative');
         } else {
             let hToday = (standardDaily > 0) ? (dailyRem / standardDaily) * 100 : 0;
-            waveToday.style.height = Math.min(100, hToday) + "%";
-            waveToday.style.opacity = "1";
+            waveToday.style.height = Math.min(100, hToday) + "%"; waveToday.style.opacity = "1";
             circle.classList.remove('is-overdrawn');
-            dailyDisplay.classList.remove('negative');
+            document.getElementById('daily-remaining').classList.remove('negative');
         }
 
         if (totalFree <= 0) {
-            waveMonth.style.height = "0%";
-            waveMonth.style.opacity = "0";
+            waveMonth.style.height = "0%"; waveMonth.style.opacity = "0";
         } else {
             let hMonth = (potentialIncome > 0) ? (totalFree / potentialIncome) * 100 : 0;
-            waveMonth.style.height = Math.min(100, hMonth) + "%";
-            waveMonth.style.opacity = "1";
+            waveMonth.style.height = Math.min(100, hMonth) + "%"; waveMonth.style.opacity = "1";
         }
 
         const listContainer = document.getElementById('history-list');
